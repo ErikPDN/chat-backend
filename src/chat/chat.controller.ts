@@ -2,9 +2,10 @@ import { Controller, Get, Post, Body, Param } from '@nestjs/common';
 import { ChatService } from './chat.service';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { CurrentUser } from '../common/decorators/user.decorator';
-import { ApiOperation } from '@nestjs/swagger';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { RequestUser } from 'src/common/interfaces/request-user.interface';
 
+@ApiTags('chats')
 @Controller('chat')
 export class ChatController {
   constructor(private readonly chatService: ChatService) { }
