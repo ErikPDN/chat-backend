@@ -5,6 +5,7 @@ import { ChatModule } from './chat/chat.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import * as Joi from 'joi';
+import { ContactsModule } from './contacts/contacts.module';
 
 @Module({
   imports: [
@@ -27,8 +28,9 @@ import * as Joi from 'joi';
     }),
     UsersModule,
     ChatModule,
+    ContactsModule,
   ],
   controllers: [],
   providers: [],
 })
-export class AppModule { }
+export class AppModule {}
