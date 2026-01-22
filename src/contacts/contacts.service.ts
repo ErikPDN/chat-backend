@@ -50,6 +50,7 @@ export class ContactsService {
       userId: userObjectId,
       contactId: contactObjectId,
       nickname: addContactDto.nickname || null,
+      blocked: false,
     });
 
     const savedContact = await contact.save();
@@ -77,14 +78,18 @@ export class ContactsService {
       contact.nickname = updateContactDto.nickname;
     }
 
+    if (updateContactDto.blocked !== undefined) {
+      contact.blocked = updateContactDto.blocked;
+    }
+
     const savedContact = await contact.save();
     return savedContact.populate('contactId', 'username avatar email');
   }
 
-  async getContactById(userId: string, personId: string) {
+  async getContactById(userId: string, contactId: string) {
     const contact = await this.contactModel
       .findOne({
-        contactId: new Types.ObjectId(personId),
+        contactId: new Types.ObjectId(contactId),
         userId: new Types.ObjectId(userId),
       })
       .populate('contactId', 'username avatar email')

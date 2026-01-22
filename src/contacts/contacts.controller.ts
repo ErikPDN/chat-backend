@@ -23,7 +23,7 @@ import { UpdateContactDto } from './dto/update-contact.dto';
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class ContactsController {
-  constructor(private readonly contactsService: ContactsService) {}
+  constructor(private readonly contactsService: ContactsService) { }
 
   @Post()
   @ApiOperation({ summary: 'Adiciona um novo contato' })
@@ -35,6 +35,7 @@ export class ContactsController {
   }
 
   @Patch(':contactId')
+  @ApiOperation({ summary: 'Atualizar informações do contato' })
   updateContact(
     @CurrentUser() user: RequestUser,
     @Param('contactId') contactId: string,

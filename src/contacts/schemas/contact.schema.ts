@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Types } from 'mongoose';
+import { Types, Document } from 'mongoose';
 
 export type ContactDocument = Contact & Document;
 
@@ -11,14 +11,14 @@ export class Contact {
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
   contactId: Types.ObjectId;
 
-  @Prop({ default: false })
-  blocked: boolean;
-
   @Prop({ default: null })
   nickname?: string;
 
-  @Prop({ default: Date.now })
+  @Prop({ default: false })
+  blocked: boolean;
+
   createdAt: Date;
+  updatedAt: Date;
 }
 
 export const ContactSchema = SchemaFactory.createForClass(Contact);
