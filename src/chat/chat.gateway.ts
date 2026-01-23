@@ -148,4 +148,66 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
     return { error: 'Não autenticado' };
   }
+
+  @SubscribeMessage('sendGroupMessage')
+  async handleGroupMessage(
+    @MessageBody() messageData: { groupId: string; content: string },
+    @ConnectedSocket() client: AuthenticatedSocket,
+  ) {
+    if (!client.userId) {
+      return { error: 'Não autenticado' };
+    }
+
+    try {
+      const message = await this.chatService.createGroupMessage(
+        messageData.groupId,
+        messageData.content,
+        client.userId,
+      );
+
+      this.server.to(`group:${messageData.groupId}`).emit('newGroupMessage', {
+        ...message.toObject(),
+        senderId: client.userId,
+        groupId: messageData.groupId,
+      });
+
+      return { success: true, message: message.toObject() };
+    } catch (error) {
+      return {
+        error: error instanceof Error ? error.message : 'Erro desconhecido',
+      };
+    }
+  }
+
+  @SubscribeMessage('joinGroup')
+  handleJoinGroup(
+    @MessageBody() data: { groupId: string },
+    @ConnectedSocket() client: AuthenticatedSocket,
+  ) {
+    if (client.userId) {
+      client.join(`group:${data.groupId}`);
+      this.server.to(`group:${data.groupId}`).emit('userJoinedGroup', {
+        userId: client.userId,
+        groupId: data.groupId,
+      });
+      return { success: true };
+    }
+    return { error: 'Não autenticado' };
+  }
+
+  @SubscribeMessage('leaveGroup')
+  handleLeaveGroup(
+    @MessageBody() data: { groupId: string },
+    @ConnectedSocket() client: AuthenticatedSocket,
+  ) {
+    if (client.userId) {
+      client.leave(`group:${data.groupId}`);
+      this.server.to(`group:${data.groupId}`).emit('userLeftGroup', {
+        userId: client.userId,
+        groupId: data.groupId,
+      });
+      return { success: true };
+    }
+    return { error: 'Não autenticado' };
+  }
 }

@@ -11,6 +11,9 @@ export class Message {
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
   receiverId: Types.ObjectId;
 
+  @Prop({ type: Types.ObjectId, ref: 'Group' })
+  groupId?: Types.ObjectId;
+
   @Prop({ required: true, trim: true })
   content: string;
 

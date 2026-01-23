@@ -1,8 +1,10 @@
 import { SchemaFactory, Schema, Prop } from '@nestjs/mongoose';
-import { Types } from 'mongoose';
+import { Types, Document } from 'mongoose';
+
+export type GroupDocument = Group & Document; 
 
 @Schema({ timestamps: true })
-export class Group extends Document {
+export class Group { 
   @Prop({ required: true })
   name: string;
 

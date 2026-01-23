@@ -16,17 +16,15 @@ export class ContactsService {
   constructor(
     @InjectModel(Contact.name) private contactModel: Model<ContactDocument>,
     private usersService: UsersService,
-  ) {}
+  ) { }
 
   async addContact(userId: string, addContactDto: AddContactDto) {
-    // Não permitir que o usuário se adicione a si mesmo
     if (userId === addContactDto.contactId) {
       throw new BadRequestException(
         'Você não pode adicionar a si mesmo como contato',
       );
     }
 
-    // Verificar se o usuário a ser adicionado existe
     const contactUser = await this.usersService.findOne(
       addContactDto.contactId,
     );

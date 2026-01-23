@@ -14,4 +14,4 @@ import { UsersModule } from '../users/users.module';
   providers: [ContactsService],
   exports: [ContactsService],
 })
-export class ContactsModule {}
+export class ContactsModule { }

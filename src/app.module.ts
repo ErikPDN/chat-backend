@@ -6,6 +6,7 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import * as Joi from 'joi';
 import { ContactsModule } from './contacts/contacts.module';
+import { GroupsModule } from './groups/groups.module';
 
 @Module({
   imports: [
@@ -16,7 +17,6 @@ import { ContactsModule } from './contacts/contacts.module';
       }),
       envFilePath: '.env',
     }),
-    AuthModule,
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
@@ -27,8 +27,10 @@ import { ContactsModule } from './contacts/contacts.module';
       inject: [ConfigService],
     }),
     UsersModule,
-    ChatModule,
+    GroupsModule,
     ContactsModule,
+    AuthModule,
+    ChatModule,
   ],
   controllers: [],
   providers: [],
