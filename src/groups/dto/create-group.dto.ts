@@ -36,5 +36,5 @@ export class CreateGroupDto {
     each: true,
     message: 'Cada ID deve ser um MongoDB ObjectId válido',
   })
-  memberIds?: string[];
+  membersId?: string[];
 }

@@ -26,8 +26,8 @@ export class GroupsService {
     const creatorObjectId = new Types.ObjectId(creatorId);
     const memberIds = [creatorObjectId];
 
-    if (createGroupDto.memberIds && createGroupDto.memberIds.length > 0) {
-      for (const memberId of createGroupDto.memberIds) {
+    if (createGroupDto.membersId && createGroupDto.membersId.length > 0) {
+      for (const memberId of createGroupDto.membersId) {
         const member = await this.usersService.findOne(memberId);
         if (!member) {
           throw new NotFoundException(`Usuário ${memberId} não encontrado`);
