@@ -20,8 +20,11 @@ export class Message {
   @Prop({ default: false })
   isRead: boolean;
 
-  @Prop({ default: Date.now })
+  @Prop()
   readAt?: Date;
+
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export const MessageSchema = SchemaFactory.createForClass(Message);

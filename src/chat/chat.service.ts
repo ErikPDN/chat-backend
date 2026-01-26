@@ -10,6 +10,7 @@ import { UsersService } from 'src/users/users.service';
 import { Model, Types } from 'mongoose';
 import { GroupsService } from 'src/groups/groups.service';
 import { ContactsService } from 'src/contacts/contacts.service';
+import { ConversationItem } from 'src/common/interfaces/conversation-item';
 
 @Injectable()
 export class ChatService {
@@ -104,6 +105,109 @@ export class ChatService {
       .populate('senderId', 'username avatar')
       .populate('receiverId', 'username avatar')
       .exec();
+  }
+
+  async getAllConversations(userId: string): Promise<ConversationItem[]> {
+    const p2pConversations =
+      await this.messageModel.aggregate<ConversationItem>([
+        {
+          $match: {
+            $or: [
+              { senderId: new Types.ObjectId(userId) },
+              { receiverId: new Types.ObjectId(userId) },
+            ],
+            groupId: { $exists: false }, // Apenas P2P
+          },
+        },
+        {
+          $sort: { createdAt: -1 },
+        },
+        {
+          $group: {
+            _id: {
+              $cond: [
+                { $eq: ['$senderId', new Types.ObjectId(userId)] },
+                '$receiverId',
+                '$senderId',
+              ],
+            },
+            lastMessage: { $first: '$content' },
+            lastMessageTimestamp: { $first: '$createdAt' },
+            unreadCount: {
+              $sum: {
+                $cond: [
+                  {
+                    $and: [
+                      { $eq: ['$receiverId', new Types.ObjectId(userId)] },
+                      { $eq: ['$isRead', false] },
+                    ],
+                  },
+                  1,
+                  0,
+                ],
+              },
+            },
+          },
+        },
+        {
+          $lookup: {
+            from: 'users',
+            localField: '_id',
+            foreignField: '_id',
+            as: 'user',
+          },
+        },
+        {
+          $unwind: '$user',
+        },
+        {
+          $project: {
+            _id: '$_id',
+            name: '$user.username',
+            avatar: '$user.avatar',
+            lastMessage: 1,
+            lastMessageTimestamp: 1,
+            unreadCount: 1,
+            isGroup: { $literal: false },
+          },
+        },
+      ]);
+
+    // Buscar conversas de grupo
+    const groups = await this.groupsService.findUserGroups(userId);
+
+    const groupConversations: ConversationItem[] = await Promise.all(
+      groups.map(async (group): Promise<ConversationItem> => {
+        const lastMessage = await this.messageModel
+          .findOne({ groupId: group._id })
+          .sort({ createdAt: -1 })
+          .lean();
+
+        return {
+          _id: group._id,
+          name: group.name,
+          description: group.description,
+          avatar: null,
+          lastMessage: lastMessage?.content || null,
+          lastMessageTimestamp: lastMessage?.createdAt || group.createdAt,
+          unreadCount: 0,
+          isGroup: true,
+          membersId: group.membersId,
+          creatorId: group.creatorId,
+        };
+      }),
+    );
+
+    const allConversations: ConversationItem[] = [
+      ...p2pConversations,
+      ...groupConversations,
+    ].sort(
+      (a, b) =>
+        new Date(b.lastMessageTimestamp).getTime() -
+        new Date(a.lastMessageTimestamp).getTime(),
+    );
+
+    return allConversations;
   }
 
   async markAsRead(messageId: string, userId: string) {

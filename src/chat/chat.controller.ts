@@ -1,12 +1,15 @@
-import { Controller, Get, Post, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseGuards } from '@nestjs/common';
 import { ChatService } from './chat.service';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { CurrentUser } from '../common/decorators/user.decorator';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import type { RequestUser } from 'src/common/interfaces/request-user.interface';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 
 @ApiTags('chats')
 @Controller('chat')
+@UseGuards(JwtAuthGuard)
+@ApiBearerAuth()
 export class ChatController {
   constructor(private readonly chatService: ChatService) { }
 
@@ -25,6 +28,12 @@ export class ChatController {
     @CurrentUser() user: RequestUser,
   ) {
     return this.chatService.getConversation(user.userId, userId);
+  }
+
+  @Get('conversations')
+  @ApiOperation({ summary: 'Obter todas as conversas (P2P e grupos)' })
+  getAllConversations(@CurrentUser() user: RequestUser) {
+    return this.chatService.getAllConversations(user.userId);
   }
 
   @Get('unread-count')
