@@ -21,13 +21,19 @@ export class ChatController {
     return this.chatService.create(createMessageDto, user.userId);
   }
 
-  @Get('conversation/:userId')
-  @ApiOperation({ summary: 'Obter conversa entre dois usuários' })
-  getConversation(
-    @Param('userId') userId: string,
+  @Get('conversations/p2p/:userId/messages')
+  @ApiOperation({ summary: 'Obter mensagens de conversa P2P' })
+  getP2PMessages(
+    @Param('userId') otherUserId: string,
     @CurrentUser() user: RequestUser,
   ) {
-    return this.chatService.getConversation(user.userId, userId);
+    return this.chatService.getConversation(user.userId, otherUserId);
+  }
+
+  @Get('conversations/group/:groupId/messages')
+  @ApiOperation({ summary: 'Obter mensagens de grupo' })
+  getGroupMessages(@Param('groupId') groupId: string) {
+    return this.chatService.getGroupMessages(groupId);
   }
 
   @Get('conversations')

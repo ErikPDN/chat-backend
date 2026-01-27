@@ -1,0 +1,75 @@
+- add cache para ultimas mensagens lidas de cada conversa
+Nova estrutura futura:
+@Schema({ timestamps: true })
+export class Message {
+  @Prop({ type: Types.ObjectId, ref: 'User', required: true, index: true })
+  senderId: Types.ObjectId;
+
+  @Prop({ type: Types.ObjectId, ref: 'User', index: true })
+  receiverId?: Types.ObjectId;
+
+  @Prop({ type: Types.ObjectId, ref: 'Group', index: true })
+  groupId?: Types.ObjectId;
+
+  // Tipo de mensagem
+  @Prop({ enum: ['text', 'image', 'video', 'audio', 'document', 'location'], default: 'text' })
+  type: string;
+
+  // Conteúdo
+  @Prop({ trim: true })
+  content?: string;
+
+  @Prop()
+  mediaUrl?: string;
+
+  @Prop()
+  thumbnail?: string;
+
+  @Prop()
+  fileName?: string;
+
+  @Prop()
+  fileSize?: number;
+
+  // Status de entrega
+  @Prop({ default: Date.now })
+  sentAt: Date;
+
+  @Prop()
+  deliveredAt?: Date;
+
+  @Prop()
+  readAt?: Date;
+
+  // Edição/Exclusão
+  @Prop()
+  editedAt?: Date;
+
+  @Prop()
+  deletedAt?: Date;
+
+  @Prop({ type: [Types.ObjectId], default: [] })
+  deletedFor: Types.ObjectId[];  // IDs de quem deletou
+
+  // Resposta/Thread
+  @Prop({ type: Types.ObjectId, ref: 'Message' })
+  replyToMessageId?: Types.ObjectId;
+
+  // Reações
+  @Prop({
+    type: [{
+      userId: { type: Types.ObjectId, ref: 'User' },
+      emoji: String,
+      createdAt: Date
+    }],
+    default: []
+  })
+  reactions: { userId: Types.ObjectId; emoji: string; createdAt: Date }[];
+}
+
+// Índices compostos para performance
+MessageSchema.index({ senderId: 1, receiverId: 1, createdAt: -1 });
+MessageSchema.index({ groupId: 1, createdAt: -1 });
+MessageSchema.index({ receiverId: 1, readAt: 1 }); // Para unread count
+
+- add paginação

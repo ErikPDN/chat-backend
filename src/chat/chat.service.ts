@@ -173,7 +173,6 @@ export class ChatService {
         },
       ]);
 
-    // Buscar conversas de grupo
     const groups = await this.groupsService.findUserGroups(userId);
 
     const groupConversations: ConversationItem[] = await Promise.all(
