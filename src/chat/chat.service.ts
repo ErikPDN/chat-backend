@@ -209,27 +209,17 @@ export class ChatService {
     return allConversations;
   }
 
-  async markAsRead(messageId: string, userId: string) {
-    const message = await this.messageModel.findById(messageId);
-    if (!message) {
-      throw new NotFoundException('Mensagem não encontrada');
-    }
+  async markConversationAsRead(userId: string, otherUserId: string) {
+    const result = await this.messageModel.updateMany(
+      {
+        senderId: new Types.ObjectId(otherUserId),
+        receiverId: new Types.ObjectId(userId),
+        isRead: false,
+      },
+      { isRead: true, readAt: new Date() },
+    );
 
-    if (!message.receiverId) {
-      throw new BadRequestException(
-        'Mensagens de grupo não podem ser marcadas como lidas',
-      );
-    }
-
-    if (message.receiverId.toString() !== userId) {
-      throw new BadRequestException(
-        'Você não tem permissão para marcar esta mensagem',
-      );
-    }
-
-    message.isRead = true;
-    message.readAt = new Date();
-    return message.save();
+    return this.getConversation(userId, otherUserId);
   }
 
   async getUnreadCount(userId: string) {

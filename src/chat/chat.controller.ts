@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseGuards, Patch } from '@nestjs/common';
 import { ChatService } from './chat.service';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { CurrentUser } from '../common/decorators/user.decorator';
@@ -48,9 +48,15 @@ export class ChatController {
     return this.chatService.getUnreadCount(user.userId);
   }
 
-  @Post('messages/:id/read')
-  @ApiOperation({ summary: 'Marcar mensagem como lida' })
-  markAsRead(@Param('id') id: string, @CurrentUser() user: RequestUser) {
-    return this.chatService.markAsRead(id, user.userId);
+  @Patch('conversations/p2p/:userId/mark-as-read')
+  @ApiOperation({ summary: 'Marcar conversa P2P como lida' })
+  markConversationAsRead(
+    @Param('userId') otherUserId: string,
+    @CurrentUser() user: RequestUser,
+  ) {
+    return this.chatService.markConversationAsRead(
+      user.userId,
+      otherUserId
+    )
   }
 }
