@@ -61,9 +61,12 @@ export class ChatService {
       throw new NotFoundException('Grupo não encontrado');
     }
 
+    const senderObjectId = new Types.ObjectId(senderId);
+
     const isMember = group.membersId.some(
-      (memberId) => memberId.toString() === senderId,
+      (memberId) => memberId.equals(senderObjectId),
     );
+    
     if (!isMember) {
       throw new NotFoundException(
         'Você não é membro deste grupo e não pode enviar mensagens',
@@ -72,7 +75,7 @@ export class ChatService {
 
     const message = new this.messageModel({
       content,
-      senderId: new Types.ObjectId(senderId),
+      senderId: senderObjectId,
       groupId: new Types.ObjectId(groupId),
     });
 
