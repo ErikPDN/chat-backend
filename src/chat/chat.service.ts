@@ -82,7 +82,19 @@ export class ChatService {
     return message.save();
   }
 
-  async getGroupMessages(groupId: string) {
+  async getGroupMessages(groupId: string, userId: string) {
+    if (userId) {
+      const group = await this.groupsService.findById(groupId);
+      if (!group) {
+        throw new NotFoundException('Grupo não encontrado');
+      }
+
+      const isMember = group.membersId.some((memberId) => memberId.equals(new Types.ObjectId(userId)));
+      if (!isMember) {
+        throw new NotFoundException('Você não é membro deste grupo');
+      }
+    }
+
     return this.messageModel
       .find({ groupId: new Types.ObjectId(groupId) })
       .sort({ createdAt: 1 })
@@ -119,7 +131,7 @@ export class ChatService {
               { senderId: new Types.ObjectId(userId) },
               { receiverId: new Types.ObjectId(userId) },
             ],
-            groupId: { $exists: false }, // Apenas P2P
+            groupId: { $exists: false },
           },
         },
         {
@@ -185,6 +197,12 @@ export class ChatService {
           .sort({ createdAt: -1 })
           .lean();
 
+        const unreadCount = await this.messageModel.countDocuments({
+          groupId: group._id,
+          senderId: { $ne: new Types.ObjectId(userId) },
+          readBy: { $ne: new Types.ObjectId(userId) },
+        });
+
         return {
           _id: group._id,
           name: group.name,
@@ -192,7 +210,7 @@ export class ChatService {
           avatar: null,
           lastMessage: lastMessage?.content || null,
           lastMessageTimestamp: lastMessage?.createdAt || group.createdAt,
-          unreadCount: 0,
+          unreadCount,
           isGroup: true,
           membersId: group.membersId,
           creatorId: group.creatorId,
@@ -212,6 +230,20 @@ export class ChatService {
     return allConversations;
   }
 
+  async getGroupById(groupId: string) {
+    const group = await this.groupsService.findById(groupId);
+    if (!group) {
+      throw new NotFoundException('Grupo não encontrado');
+    }
+    return group;
+  }
+
+  async getUserGroups(userId: string) {
+    return this.groupsService.findUserGroups(userId).then(groups =>
+      groups.map(group => group._id.toString())
+    );
+  }
+
   async markConversationAsRead(userId: string, otherUserId: string) {
     const result = await this.messageModel.updateMany(
       {
@@ -225,12 +257,48 @@ export class ChatService {
     return this.getConversation(userId, otherUserId);
   }
 
+  async markGroupMessagesAsRead(userId: string, groupId: string) {
+    const group = await this.groupsService.findById(groupId);
+    if (!group) {
+      throw new NotFoundException('Grupo não encontrado');
+    }
+
+    const userObjectId = new Types.ObjectId(userId);
+    const isMember = group.membersId.some((memberId) =>
+      memberId.equals(userObjectId),
+    );
+    if (!isMember) {
+      throw new NotFoundException(
+        'Você não é membro deste grupo e não pode marcar mensagens como lidas',
+      );
+    }
+
+    await this.messageModel.updateMany(
+      {
+        groupId: new Types.ObjectId(groupId),
+        senderId: { $ne: userObjectId },
+        readBy: { $ne: userObjectId },
+      },
+      { $addToSet: { readBy: userObjectId } },
+    );
+
+    return this.getGroupMessages(groupId, userId);
+  }
+
   async getUnreadCount(userId: string) {
-    return this.messageModel
-      .countDocuments({
-        receiverId: new Types.ObjectId(userId),
-        isRead: false,
-      })
-      .exec();
+    const userObjectId = new Types.ObjectId(userId);
+
+    const p2pUnread = await this.messageModel.countDocuments({
+      receiverId: userObjectId,
+      isRead: false,
+    });
+
+    const groupUnread = await this.messageModel.countDocuments({
+      groupId: { $exists: true },
+      senderId: { $ne: userObjectId },
+      readBy: { $ne: userObjectId },
+    });
+
+    return p2pUnread + groupUnread;
   }
 }

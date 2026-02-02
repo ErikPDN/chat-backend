@@ -23,6 +23,9 @@ export class Message {
   @Prop()
   readAt?: Date;
 
+  @Prop({ type: [Types.ObjectId], ref: 'User', default: [] })
+  readBy?: Types.ObjectId[];
+
   createdAt: Date;
   updatedAt: Date;
 }

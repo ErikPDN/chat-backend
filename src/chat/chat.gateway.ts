@@ -65,6 +65,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       client.userId = payload.sub;
       this.connectedUsers.set(client.id, payload.sub);
 
+      const userGroups = await this.chatService.getUserGroups(payload.sub);
+    
+      userGroups.forEach((groupId) => {
+        client.join(`group:${groupId}`);
+      });
+
       await this.usersService.updateLastSeen(payload.sub);
 
       client.broadcast.emit('userOnline', { userId: payload.sub });
@@ -109,14 +115,20 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         ([_, userId]) => userId === createMessageDto.receiverId,
       )?.[0];
 
-      if (receiverSocketId) {
-        this.server.to(receiverSocketId).emit('newMessage', {
-          ...message.toObject(),
-          senderId: message.senderId,
-          receiverId: message.receiverId,
-        });
+      const messagePayload = {
+        ...message.toObject(),
+        senderId: message.senderId._id,
+        receiverId: message.receiverId?._id,
       }
 
+      // Emitir para o destinatário se estiver conectado
+      if (receiverSocketId) {
+        this.server.to(receiverSocketId).emit('newMessage', messagePayload);
+      }
+      
+      // Emitir para o remetente
+      this.server.to(client.id).emit('newMessage', messagePayload);
+      
       return { success: true, message: message.toObject() };
     } catch (error) {
       return {
@@ -164,7 +176,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         messageData.content,
         client.userId,
       );
-
+      
+      // Emitir para quem está na sala do grupo
       this.server.to(`group:${messageData.groupId}`).emit('newGroupMessage', {
         ...message.toObject(),
         senderId: client.userId,

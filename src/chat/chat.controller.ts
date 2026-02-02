@@ -32,8 +32,8 @@ export class ChatController {
 
   @Get('conversations/group/:groupId/messages')
   @ApiOperation({ summary: 'Obter mensagens de grupo' })
-  getGroupMessages(@Param('groupId') groupId: string) {
-    return this.chatService.getGroupMessages(groupId);
+  getGroupMessages(@Param('groupId') groupId: string, @CurrentUser() user: RequestUser) {
+    return this.chatService.getGroupMessages(groupId, user.userId);
   }
 
   @Get('conversations')
@@ -58,5 +58,14 @@ export class ChatController {
       user.userId,
       otherUserId
     )
+  }
+
+  @Patch('conversations/group/:groupId/mark-as-read')
+  @ApiOperation({ summary: 'Marcar mensagens do grupo como lidas' })
+  markGroupMessagesAsRead(
+    @Param('groupId') groupId: string,
+    @CurrentUser() user: RequestUser,
+  ) {
+    return this.chatService.markGroupMessagesAsRead(user.userId, groupId);
   }
 }
